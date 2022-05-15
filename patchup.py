@@ -2,6 +2,7 @@
 import os
 import click
 import re
+from subprocess import check_output
 
 
 def log_w(value):
@@ -72,7 +73,7 @@ def download_libc(glibc_path, list, debug):
         choice = input("The libc library and linker you need are matched "
                            "in the glibc all in one list file. You can choose "
                            "to download them by selecting the corresponding "
-                           "subscript index, or enter q to exit\n")
+                           "subscript index, or enter q to exit\n") 
     if choice == 'q':
         log_info("Normal exit")
         exit()
@@ -168,7 +169,8 @@ def match_libc(glibc_path, libc_version, arch, success_match):
 @click.option('--backups', '-b', 'backup', is_flag=True, help="Backup target file or not.")
 @click.option('--debug', '-d', 'debug', is_flag=True,
               help="if open debug,you can see some key information in the patch process")
-def patchup(program_name, libc_edition, backup, debug):
+@click.option('--choice', '-c', 'choice', is_flag=True, help="Choose libc version independently")
+def patchup(program_name, libc_edition, backup,debug,choice):
     """PROGRAM_NAME: ELF executable filename.\n
      LIBC_EDITION: If you want to patch the libc which is given by the topic ,
      then you should enter its full name or path,for example /home/hacker/Desktop/libc-2.23.so.
@@ -209,8 +211,16 @@ def patchup(program_name, libc_edition, backup, debug):
                 log_w("{} not in glibc all in one".format(libc_edition))
                 exit()
         log('success_match', success_match)
-
-        libc_path = glibc_path + '/libs/' + success_match[0]
+        if choice:
+            try:
+                libc_index = raw_input("Enter the index to select the libc library you want\n")
+            except:
+                libc_index = input("Enter the index to select the libc library you want\n")
+        libc_index=int(libc_index)
+        if libc_index<0 or libc_index>=len(success_match):
+            log_w('invalid index')
+            exit()
+        libc_path = glibc_path + '/libs/' + success_match[libc_index]
         ld_path = libc_path + '/ld-' + libc_edition + '.so'
         libc = libc_path + '/libc-' + libc_edition + '.so'
 
