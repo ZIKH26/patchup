@@ -70,7 +70,8 @@ sudo pip install --editable .
 ```bash
 patchup --help
 ```
-<img width="550" alt="image" src="https://user-images.githubusercontent.com/93199623/167239756-3f52d19f-390e-4648-ba74-fee10ba71dfb.png">
+<img width="544" alt="image" src="https://user-images.githubusercontent.com/93199623/168457093-d3019f95-8ec7-4dd1-bea6-ea7222e77533.png">
+
 
 
 
@@ -89,7 +90,7 @@ patchup
 ## 示例
 
 假设你有一个 名为 `demo`  ELF 文件,他现在默认的 `libc` 库是 `2.27` 的，但是服务器那边的这个程序所依赖的 `libc` 库是2.23的
-那么你就可以使用以下命令，去为你的ELF文件patch一个 `2.23` 的 `libc` 库。（`-b` 是备份的意思，建议每次使用 `patchup` 时都开启该选项）
+那么你就可以使用以下命令，去为你的ELF文件patch一个 `2.23` 的 `libc` 库。（`-b` 是备份的意思，建议每次使用 `patchup` 时都开启该选项,`-c`是自主选择小版本libc的选项，开启这个选项你可以选择小版本不同的`2.23`的`libc`库，如果不开启，则默认是匹配到2.23版本的第一个`libc`库）
 
 ```bash
 patchup demo 2.23 -b
@@ -112,5 +113,6 @@ patchup demo 2.23 -b
 <img width="1150" alt="image" src="https://user-images.githubusercontent.com/93199623/167242865-c6a01d64-1c9f-415b-aa18-5428821d0a15.png">
 
 值得一提的就是，我碰见过使用`patchup`之后`patch`指定`libc`是失败的，不过我检查了一下发现这并不是`patchup`的问题，应该是`patchelf`出了点`bug`，所以碰到这种情况，可以换成`glibc-all-in-one`中版本一样的`libc`库试试。
+
 ## Thanks
 尽管本工具异常的简单，但是对于我这个不太聪明的大一学生来说，写的过程也并不一帆风顺。感谢 Roderick 师傅带给我的启发以及解答一些我的困惑，也感谢我的队员 [Timochan](www.timochan.cn) , 如果没有他，关于这个工具在其他主机上的一些环境部署我可能无法实现（最后的结果可能就是自己用用，无法让他人使用）
