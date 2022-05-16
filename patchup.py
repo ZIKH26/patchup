@@ -8,10 +8,8 @@ from subprocess import check_output
 def log_w(value):
     click.secho("Warning   {}".format(value), fg='red')
 
-
 def log(log_information, value):
-    click.echo(
-        "{} {}-------------------->  {}".format(click.style("Log", fg="white", bg='green'), log_information, value))
+    click.echo("{} {}-------------------->  {}".format(click.style("Log", fg="white", bg='green'), log_information, value))
 
 
 def log_debug(*args):
@@ -73,7 +71,7 @@ def download_libc(glibc_path, list, debug):
         choice = input("The libc library and linker you need are matched "
                            "in the glibc all in one list file. You can choose "
                            "to download them by selecting the corresponding "
-                           "subscript index, or enter q to exit\n") 
+                           "subscript index, or enter q to exit\n")
     if choice == 'q':
         log_info("Normal exit")
         exit()
@@ -211,15 +209,15 @@ def patchup(program_name, libc_edition, backup,debug,choice):
                 log_w("{} not in glibc all in one".format(libc_edition))
                 exit()
         log('success_match', success_match)
+        libc_index=0
         if choice:
             try:
-                libc_index = raw_input("Enter the index to select the libc library you want\n")
+                libc_index = int(raw_input("Enter the index to select the libc library you want\n"))
             except:
-                libc_index = input("Enter the index to select the libc library you want\n")
-        libc_index=int(libc_index)
-        if libc_index<0 or libc_index>=len(success_match):
-            log_w('invalid index')
-            exit()
+                libc_index = int(input("Enter the index to select the libc library you want\n"))
+            if libc_index<0 or libc_index>=len(success_match):
+                log_w('invalid index')
+                exit()
         libc_path = glibc_path + '/libs/' + success_match[libc_index]
         ld_path = libc_path + '/ld-' + libc_edition + '.so'
         libc = libc_path + '/libc-' + libc_edition + '.so'
