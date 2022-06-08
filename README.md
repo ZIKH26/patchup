@@ -79,11 +79,11 @@ patchup --help
 最后目录结构应该如下
 
 ```tree
+glibc-all-in-one（目录）
+patchelf（目录）
 patchup
-├── glibc-all-in-one(目录)
-├── patchelf(目录i)
-├── patchup.py(仓库文件)
-└── setup.py(仓库文件
+	├── patchup.py(仓库文件)
+	└── setup.py(仓库文件
 ```
 
 
