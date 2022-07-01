@@ -52,7 +52,7 @@ def pretreatment_arch(program_name):
         arch = '64'
         log('arch', 'amd64')
     elif '32-bit' in recv:
-        arch = '32'
+        arch = 'i386'
         log('arch', 'i386')
     else:
         log_w('It may not be an ELF file, its type is {}'.format(recv))
