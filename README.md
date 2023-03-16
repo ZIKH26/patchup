@@ -57,7 +57,7 @@ cd 到上级目录
 ## install patchup
 ok，假设你现在有了 `patchelf` 和 `glibc-all-in-one`  那么你就可以输入以下命令来安装 `patchup` 这个小工具了 
 ```bash
-git clone https://github.com/polishing-labs/patchup.git
+git clone https://github.com/ZIKH26/patchup.git
 
 cd patchup
 
