@@ -1,4 +1,3 @@
-# coding:utf-8
 import os
 import click
 import re
@@ -60,44 +59,67 @@ def pretreatment_arch(program_name):
     return arch
 
 
-def download_libc(glibc_path, list, debug):
+def download_libc(glibc_path, target_libc, debug):
+    if debug:
+        log_debug('The glibc that needs to be downloaded', glibc_path)
+    """target_libc为需要下载的libc名称"""
     """给出libc名称，去进行下载（只有在libs目录中没有搜到所需libc时，才会触发此函数）"""
     try:
-        choice = raw_input("The libc library and linker you need are matched "
-                           "in the glibc all in one list file. You can choose "
-                           "to download them by selecting the corresponding "
-                           "subscript index, or enter q to exit\n")
+
+        choice = raw_input("The version of glibc you have chosen is not present locally,"
+                            "but I can assist you in installing it. Please enter 'y' if "
+                            "you would like to proceed with the installation, or 'q' if "
+                            "you do not wish to install it.\n")
     except:
-        choice = input("The libc library and linker you need are matched "
-                           "in the glibc all in one list file. You can choose "
-                           "to download them by selecting the corresponding "
-                           "subscript index, or enter q to exit\n")
-    if choice == 'q':
+        choice = input("The version of glibc you have chosen is not present locally,"
+                            "but I can assist you in installing it. Please enter 'y' if "
+                            "you would like to proceed with the installation, or 'q' if "
+                            "you do not wish to install it.\n")
+    if choice == 'q' or choice!="y":
         log_info("Normal exit")
-        exit()
-    if choice.isdigit():
-        choice = int(choice)
-    else:
-        log_w("Illegal selection")
-        exit()
-    if choice > (len(list) - 1):
-        log_w("Illegal selection")
-        exit()
-    else:
+        exit(0)
+    if choice =="y":
+        flag=0#flag为1说明需要下载的libc位于list，为2说明位于old_list，为0说明没有找到需要的libc
+        recv = os.popen('cat ' + glibc_path + '/list').read()
+        libc_in_list = recv.split("\n")
+        recv = os.popen('cat ' + glibc_path + '/old_list').read()
+        libc_in_old_list = recv.split("\n")
+        for i in libc_in_list:
+            if target_libc in i:
+                    flag=1
+                    break
+        for i in libc_in_old_list:
+            if target_libc in i:
+                    flag=2
+                    break
+        if flag==0:
+            log_w("The required libc could not be found in the list and old_list")
+            exit(1)
+
+
         if debug:
-            log_debug(glibc_path + '/download ' + "".join(list[choice]))
+            if flag==1:
+                log_debug(glibc_path + '/download ' + "".join(target_libc))
+            if flag==2:
+                log_debug(glibc_path + '/download_old ' + "".join(target_libc))
+
         log_info("Please wait a moment. It's downloading for you")
-        judge = os.popen(glibc_path + '/download ' + "".join(list[choice])).read()
-        division = judge.split("\n")
+        if flag==1:
+            judge = os.popen(glibc_path + '/download ' + "".join(target_libc)).read()
+            division = judge.split("\n")
+        if flag==2:
+            judge = os.popen(glibc_path + '/download_old ' + "".join(target_libc)).read()
+            division = judge.split("\n")
+
         for i in division:
             if 'Failed' in i:
                 log_w("Installation failed")
-                exit()
+                exit(1)
         log_info("Libc library downloaded successfully")
-        return list[choice]
+        return
 
 
-def match_linker(libc_path, arch, all_files, glibc_path, debug):
+def match_linker(libc_path, arch, all_owned_libc, glibc_path, debug):
     """去寻找与libc匹配的ld，如果没有则会尝试在glibc-all-in-one中list文件中搜索"""
     success_match = []
     libc_path = os.path.abspath(libc_path)  # 获取用户所指定的libc绝对路径
@@ -124,7 +146,7 @@ def match_linker(libc_path, arch, all_files, glibc_path, debug):
     version = libc_edition[:4]
     log("libc_edition", libc_edition)
 
-    for i in all_files:
+    for i in all_owned_libc:
         if libc_edition in i:
             if arch in i:
                 success_match.append(i)
@@ -186,30 +208,33 @@ def patchup(program_name, libc_edition, backup,debug,choice):
     glibc_path = os.path.abspath('glibc-all-in-one')
     if debug:
         log_debug('glibc_path', glibc_path)
-    all_files = [f for f in os.listdir(glibc_path + '/libs')]
+    all_owned_libc = [f for f in os.listdir(glibc_path + '/libs')]
     if debug:
-        log_debug('all_files', all_files)
+        log_debug('all_owned_libc', all_owned_libc)
 
     """判断所给的libc是glibc-all-in-one中的数字版本还是指定的一个libc文件名"""
     if not is_number(libc_edition):
-        ld_path = match_linker(libc_edition, arch, all_files, glibc_path, debug)
+        ld_path = match_linker(libc_edition, arch, all_owned_libc, glibc_path, debug)
         libc = os.path.abspath(libc_edition)
 
+
     else:
-        for i in all_files:
-            if arch in i:
-                if libc_edition in i:
+        """如果是数字版本的话，先显示list和old_list中的所有版本"""
+        success_match=[]
+        recv = os.popen('cat ' + glibc_path + '/list').read()
+        libc_in_list = recv.split("\n")
+        recv = os.popen('cat ' + glibc_path + '/old_list').read()
+        libc_in_old_list = recv.split("\n")
+        for i in libc_in_list:
+            if libc_edition in i:
+                if arch in i:
                     success_match.append(i)
-        if not success_match:
-            """如果没有在libs目录中找到对应libc版本，则去list里面看是否存在所需版本"""
-            value = match_libc(glibc_path, libc_edition, arch, success_match)
-            if value:
-                success_match.append(download_libc(glibc_path, value, debug))
-            else:
-                log_w("{} not in glibc all in one".format(libc_edition))
-                exit()
+        for i in libc_in_old_list:
+            if libc_edition in i:
+                if arch in i:
+                    success_match.append(i)
         log('success_match', success_match)
-        libc_index=0
+
         if choice:
             try:
                 libc_index = int(raw_input("Enter the index to select the libc library you want\n"))
@@ -218,13 +243,26 @@ def patchup(program_name, libc_edition, backup,debug,choice):
             if libc_index<0 or libc_index>=len(success_match):
                 log_w('invalid index')
                 exit()
-        libc_path = glibc_path + '/libs/' + success_match[libc_index]
-        ld_path = libc_path + '/ld-' + libc_edition + '.so'
-        libc = libc_path + '/libc-' + libc_edition + '.so'
 
-        log('libc_matched', libc)
-        log('ld_patch', ld_path)
-        log('libc_path', libc_path)
+            if success_match[libc_index] not in all_owned_libc:
+                """如果libs中有所要patch的libc，那么直接进行赋值,没有的话，则先下载后赋值"""
+                download_libc(glibc_path, success_match[libc_index], debug)
+            libc_path = glibc_path + '/libs/' + success_match[libc_index]
+            ld_path = libc_path + '/ld-' + libc_edition + '.so'
+            libc = libc_path + '/libc-' + libc_edition + '.so'
+
+            log('libc_matched', libc)
+            log('ld_patch', ld_path)
+            log('libc_path', libc_path)
+
+        else:
+            libc_path = glibc_path + '/libs/' + all_owned_libc[0]
+            ld_path = libc_path + '/ld-' + libc_edition + '.so'
+            libc = libc_path + '/libc-' + libc_edition + '.so'
+
+            log('libc_matched', libc)
+            log('ld_patch', ld_path)
+            log('libc_path', libc_path)
 
     if backup:
         if debug:
